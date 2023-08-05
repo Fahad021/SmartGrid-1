@@ -49,32 +49,19 @@ model = AbstractModel()
 # nodes
 n=R.cdfDataNodes
 def InitNodes(model):
-    indexN=[]
-    for i in n:
-        indexN.append(i['cdfNum'])
-    return indexN 
+    return [i['cdfNum'] for i in n] 
 model.nodes=Set(initialize= InitNodes , doc='Nodes index: cdfNum')
 # branches
 k=R.cdfDataBranches
 def InitBranchesIndex(model):
-    numB=[]
-    for j in k:
-        numB.append(j['cdfNum'])
-    return numB
+    return [j['cdfNum'] for j in k]
 module.branchesIndex=Set(initialize=InitBranchesIndex, doc='cdfNum of Branches' )
 def InitBranches(model):
-    indexK=[]
-    for j in k:
-        indexK.append((j['fromBus'], j['toBus'], j['cdfNum'] ))
-    return indexK
+    return [(j['fromBus'], j['toBus'], j['cdfNum'] ) for j in k]
 model.branches=Set(within=model.nodes*model.nodes*model.branchesIndex ,initialize=InitBranches,                    doc='Branches index (fromBus,toBus)',dimen=3)
 # Neighbours 
 def InitNeighbours(model, node):
-    retval = []
-    for link in k:
-        if link['fromBus'] == node:
-            retval.append( link['toBus'])
-    return retval
+    return [link['toBus'] for link in k if link['fromBus'] == node]
 model.neighbours=Param(model.nodes,initialize=InitNeighbours )
 
 
