@@ -84,105 +84,74 @@ model = ConcreteModel()
 ###########
 # nodes
 def InitNodes(model):
-    indexN=[]
-    for i in n:
-        indexN.append(i['cdfNum'])
-    return indexN 
+    return [i['cdfNum'] for i in n] 
 model.nodes=Set(initialize= InitNodes , doc='Nodes index: cdfNum')
 # Neighbour nodes
 def InitNeighbours(model, node):
-    retval = []
-    for link in k:
-        if link['fromBus'] == node and link['toBus']  in model.nodes :
-            retval.append( link['toBus'])
-    return retval
+    return [
+        link['toBus']
+        for link in k
+        if link['fromBus'] == node and link['toBus'] in model.nodes
+    ]
 model.neighbours=Set(model.nodes,initialize=InitNeighbours,doc='Neighbours of each node' )
 #PQ busses :
 def PQbus_rule(model):
-    retval=[]
-    for i in n:
-        if i['busType']==1:
-            retval.append(i['cdfNum'])
-    return retval
+    return [i['cdfNum'] for i in n if i['busType']==1]
 model.PQbuses=Set(initialize=PQbus_rule,doc='PQ busses')
 #PV busses :
 def PVbus_rule(model):
-    retval=[]
-    for i in n:
-        if i['busType']==2:
-            retval.append(i['cdfNum'])
-    return retval
+    return [i['cdfNum'] for i in n if i['busType']==2]
 model.PVbuses=Set(initialize=PVbus_rule,doc='PV busses')
 #SWING busses:
 def SWING_rule(model):
-    retval=[]
-    for i in n:
-        if i['busType']==3:
-            retval.append(i['cdfNum'])
-    return retval
+    return [i['cdfNum'] for i in n if i['busType']==3]
 model.SWINGbuses=Set(initialize=SWING_rule,doc='SWING busses')
 
 # Branches
 def InitBranchesIndex(model):
-    numB=[]
-    for j in k:
-        if j['fromBus'] in model.nodes and j['toBus'] in model.nodes:
-            numB.append(j['cdfNum'])
-    return numB
+    return [
+        j['cdfNum']
+        for j in k
+        if j['fromBus'] in model.nodes and j['toBus'] in model.nodes
+    ]
 model.branches=Set(initialize=InitBranchesIndex, doc='cdfNum of ALL Branches: number in the cdf file, Branch identifier.                      Inter area branches are indicated by double letter ID.                      Circuits on a common tower have hyphenated ID#.' )
 #PAssive Branches
 def PassiveBranch_rule(model):
-    retval=[]
-    for j in k:
-        if j['TR']==0 and j['cdfNum'] in model.branches :
-            retval.append(j['cdfNum'])
-    return retval
+    return [j['cdfNum'] for j in k if j['TR']==0 and j['cdfNum'] in model.branches]
 model.PassiveBranches=Set(initialize=PassiveBranch_rule, doc='Passive lines')
 # Active Branches
 def ActiveBranch_rule(model):
-    retval=[]
-    for j in k:
-        if j['TR']!=0 and j['cdfNum'] in model.branches:
-            retval.append(j['cdfNum'])
-    return retval
+    return [j['cdfNum'] for j in k if j['TR']!=0 and j['cdfNum'] in model.branches]
 model.ActiveBranches=Set(initialize=ActiveBranch_rule, doc='Active lines')
 # Connected branches to each node
 def InitConn(model,node):
-    retval=[]
-    for j in k:
-        if j['fromBus']==node and j['cdfNum'] in model.branches:
-            retval.append(j['cdfNum'])
-    return retval
+    return [
+        j['cdfNum']
+        for j in k
+        if j['fromBus'] == node and j['cdfNum'] in model.branches
+    ]
 model.kp=Set(model.nodes,initialize=InitConn, doc='cdfNum of branches connected to ONE node' )
 # Connected ACTIVE branches to each node
 def InitConnActive(model,node):
-    retval=[]
-    for j in k:
-        if j['fromBus']==node and j['cdfNum'] in model.ActiveBranches:
-            retval.append(j['cdfNum'])
-    return retval
+    return [
+        j['cdfNum']
+        for j in k
+        if j['fromBus'] == node and j['cdfNum'] in model.ActiveBranches
+    ]
 def InitConnPassive(model,node):
-    retval=[]
-    for j in k:
-        if j['fromBus']==node and j['cdfNum'] in model.PassiveBranches:
-            retval.append(j['cdfNum'])
-    return retval
+    return [
+        j['cdfNum']
+        for j in k
+        if j['fromBus'] == node and j['cdfNum'] in model.PassiveBranches
+    ]
 model.kpActive=Set(model.nodes, initialize=InitConnActive, doc='cdfNum of Active branches connected to ONE node')
 model.kpPassive=Set(model.nodes,initialize= InitConnPassive, doc='cdfNum of Passive branches connected to ONE node')
 # generators
 def InitGen_rule(self):
-    retval=[]
-    for l in g:
-        if l['locBus'] in model.nodes:
-            retval.append(l['genID'])
-    return retval
+    return [l['genID'] for l in g if l['locBus'] in model.nodes]
 model.generators=Set(initialize=InitGen_rule,doc='genrators index by name')
 def InitNodeGens_rule(self,node):
-    retval=[]
-    for j in g:
-        if j['locBus'] == node:
-            retval.append(j['genID'])
-    return retval
+    return [j['genID'] for j in g if j['locBus'] == node]
 model.nodeGens=Set(model.nodes,initialize=InitNodeGens_rule, doc='Generators of each node')
 
 
@@ -241,18 +210,10 @@ def populateNodes_10(model,node):
             return i['busZone']
 model.busZone=Param(model.nodes, initialize=populateNodes_10, default=0, doc='cdf base zone:                     cdf zones (area1: 11-17), (area2: 21-27) and (area3:31-37)')
 def populateNodes_11(model,node):
-    qmin=0
-    for j in g:
-        if j['locBus']==node:
-            qmin += j['genQMIN']
-    return qmin
+    return sum(j['genQMIN'] for j in g if j['locBus']==node)
 model.busQMIN=Param(model.nodes,initialize=populateNodes_11,default=0,doc='Node QMIN')
 def populateNodes_12(model,node):
-    qmax=0
-    for j in g:
-        if j['locBus']==node:
-            qmax += j['genQMAX']
-    return qmax
+    return sum(j['genQMAX'] for j in g if j['locBus']==node)
 model.busQMAX=Param(model.nodes,initialize=populateNodes_12,default=0,doc='Node QMAX')
 def populateNodes_13(model,node):
     for j in g:
@@ -300,9 +261,7 @@ model.GenQMIN=Param(model.generators, initialize=populateGenerators_6, default=0
 def populateGenerators_7(model,gen):
     for j in g:
         if j['genID']==gen:
-            if model.busType[j['locBus']]==3:#slack bus
-                return 10000
-            return j['genQMAX']
+            return 10000 if model.busType[j['locBus']]==3 else j['genQMAX']
 model.GenQMAX=Param(model.generators, initialize=populateGenerators_7, default=0, doc='Maximum of Reactive power')
 def populateGenerators_8(model,gen):
     for j in g:
@@ -312,9 +271,7 @@ model.GenVsetPoint=Param(model.generators,initialize=populateGenerators_8,defaul
 def populateGenerators_9(model,gen):
     for j in g:
         if j['genID']==gen:
-            if model.busType[j['locBus']]==3:#slack bus
-                return 10000
-            return j['genPg']*1.5 # TO DO: check the PMAX values
+            return 10000 if model.busType[j['locBus']]==3 else j['genPg']*1.5
 model.GenPMAX=Param(model.generators,initialize=populateGenerators_9,default=0,doc='Max Active Power capacity')
 
 
@@ -360,23 +317,17 @@ model.BranchR=Param(model.branches, initialize=populateBranches_13, default=0, d
 def populateBranches_12(model,branch):
     for i in k:
         if i['cdfNum']==branch:
-            if i['X'] ==0:
-                return 999
-            return 1/float(i['X'])
+            return 999 if i['X'] ==0 else 1/float(i['X'])
 model.BranchG=Param(model.branches, initialize=populateBranches_12, default=0, doc='Conducance (p.u)=1/R')
 def populateBranches_11(model,branch):
     for i in k:
         if i['cdfNum']==branch:
-            if i['X'] ==0:
-                return 999
-            return 1/float(i['X']) *0.5
+            return 999 if i['X'] ==0 else 1/float(i['X']) *0.5
 model.BranchMING=Param(model.branches, initialize=populateBranches_11, default=0, doc='MIN Conducance (p.u)=1/R')
 def populateBranches_10(model,branch):
     for i in k:
         if i['cdfNum']==branch:
-            if i['X'] ==0:
-                return 999
-            return 1/float(i['X']) *1.5
+            return 999 if i['X'] ==0 else 1/float(i['X']) *1.5
 model.BranchMAXG=Param(model.branches, initialize=populateBranches_10, default=0, doc='MAX Conducance (p.u)=1/R')
 def populateBranches_9(model,branch):
     for i in k:
@@ -429,9 +380,7 @@ model.BranchMAXB=Param(model.branches, initialize=populateBranches_2, default=0,
 #x:state variable - c:control variable: !TO DO: bounds to be fixed later on!
 #nodes
 def init_xcv(model,node):
-    if node in model.PQbuses:
-        return model.busVsetPoint[node]
-    return 1
+    return model.busVsetPoint[node] if node in model.PQbuses else 1
 model.xcV   =Var(model.nodes, initialize=init_xcv , domain=Reals ,bounds=(0.9 , 1.1), doc='Voltage magnitude on each node (p.u)' )
 model.xTheta=Var(model.nodes, domain=Reals, bounds=(-pi,pi), doc='Voltage angle on each node (deg)')
 def xQgLimits(model,node):

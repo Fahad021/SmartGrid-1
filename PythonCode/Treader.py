@@ -78,12 +78,11 @@ class Treader:
                                 skip_footer=skipFooter)
                 for values in a:
                     # add the area to the values depanding on the 'cdfNum'
-                    listarea=[]
-                    listarea.append(int(values['cdfNum']/100))
+                    listarea = [int(values['cdfNum']/100)]
                     values = values.tolist() + tuple(listarea)
-                    self.cdfDataNodes.append (dict(zip(self.T_NODE_CDF_KEYS ,values)))            
+                    self.cdfDataNodes.append (dict(zip(self.T_NODE_CDF_KEYS ,values)))
             f.close()
-            #return a
+                #return a
         except IOError:
             print ("Error: can\'t find file or read data")
             
